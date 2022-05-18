@@ -237,7 +237,7 @@ abort() {
       eval_output "${CLI} label nodes \"${node}\" storagenode- 2>&1"
     done <<< "$(echo -e "${NODES}")"
     debug "Removing glusterfs daemonset."
-    eval_output "${CLI} delete ds --selector=\"glusterfs\" 2>&1"
+    eval_output "${CLI} delete ds --selector=\"k8s-app=glusterfs\" 2>&1"
     if [[ "${CLI}" == *oc\ * ]]; then
       eval_output "${CLI} delete template --selector=\"glusterfs\" 2>&1"
     fi
@@ -312,7 +312,7 @@ assign() {
 #
 #   Example usage:
 #
-#     check pods "heketi=pod" 2
+#     check pods "heketi=deployment" 2
 
 check() {
   local rc=1
@@ -692,7 +692,7 @@ fi
 output "Checking for pre-existing resources..."
 
 output -n "  GlusterFS pods ... "
-check pods "glusterfs=pod" 2 2>&1
+check pods "name=glusterfs" 2 2>&1
 if [[ $? -eq 0 ]]; then
   EXISTS_GLUSTERFS=1
   output "found."
@@ -701,7 +701,7 @@ else
 fi
 
 output -n "  deploy-heketi pod ... "
-check pods "deploy-heketi=pod" 2 2>&1
+check pods "deploy-heketi=deployment" 2 2>&1
 if [[ $? -eq 0 ]]; then
   EXISTS_DEPLOY_HEKETI=1
   output "found."
@@ -710,7 +710,7 @@ else
 fi
 
 output -n "  heketi pod ... "
-check pods "heketi=pod" 2 2>&1
+check pods "heketi=deployment" 2 2>&1
 if [[ $? -eq 0 ]]; then
   EXISTS_HEKETI=1
   output "found."
@@ -768,7 +768,7 @@ if [[ ${GLUSTER} -eq 1 ]] && [[ ${EXISTS_GLUSTERFS} -eq 0 ]] && [[ ${EXISTS_HEKE
   fi
 
   output -n "Waiting for GlusterFS pods to start ... "
-  check pods "glusterfs=pod"
+  check pods "name=glusterfs"
   if [[ $? -ne 0 ]]; then
     output "pods not found."
     exit 1
@@ -790,7 +790,7 @@ if [[ ${EXISTS_DEPLOY_HEKETI} -eq 0 ]] && [[ ${EXISTS_HEKETI} -eq 0 ]]; then
   fi
 
   output -n "Waiting for deploy-heketi pod to start ... "
-  check pods "deploy-heketi=pod"
+  check pods "deploy-heketi=deployment"
   if [[ $? -ne 0 ]]; then
     output "pod not found."
     exit 1
@@ -899,7 +899,7 @@ if [[ ${EXISTS_HEKETI} -eq 0 ]]; then
   fi
 
   output -n "Waiting for heketi pod to start ... "
-  check pods "heketi=pod"
+  check pods "heketi=deployment"
   if [[ ${?} != 0 ]]; then
     output "pod not found"
     exit 1
@@ -921,7 +921,7 @@ while [[ "x${heketi_service}" == "x" ]] || [[ "${heketi_service}" == "<none>" ]]
   heketi_service=$(${CLI} describe svc/heketi | grep "Endpoints:" | awk '{print $2}')
 done
 
-heketi_pod=$(${CLI} get pod --no-headers --show-all --selector="heketi" | awk '{print $1}')
+heketi_pod=$(${CLI} get pod --no-headers --selector="heketi" | awk '{print $1}')
 
 if [[ "${CLI}" == *oc\ * ]]; then
   heketi_service=$(${CLI} describe routes/heketi | grep "Requested Host:" | awk '{print $3}')
